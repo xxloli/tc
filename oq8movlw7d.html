@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 短视频解析神器 - 无水印下载 🌸</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #fff8fc 0%, #faf8ff 50%, #fff9fc 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 背景装饰 */
+        .bg-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .floating-heart {
+            position: absolute;
+            color: rgba(255, 182, 193, 0.2);
+            font-size: 20px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .floating-heart:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+        .floating-heart:nth-child(2) { top: 20%; right: 15%; animation-delay: 1s; }
+        .floating-heart:nth-child(3) { top: 60%; left: 5%; animation-delay: 2s; }
+        .floating-heart:nth-child(4) { top: 70%; right: 10%; animation-delay: 3s; }
+        .floating-heart:nth-child(5) { top: 40%; left: 50%; animation-delay: 4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.2; }
+            50% { transform: translateY(-20px) rotate(10deg); opacity: 0.6; }
+        }
+
+        /* 主容器 */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 头部标题 */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: slideDown 1s ease-out;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            color: #ff69b4;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(255, 105, 180, 0.3);
+            background: linear-gradient(45deg, #ff69b4, #ff1493, #ff69b4);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #ff91c7;
+            margin-bottom: 20px;
+        }
+
+        .emoji-title {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* 输入区域 */
+        .input-section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 25px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(255, 105, 180, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 182, 193, 0.3);
+            animation: slideUp 1s ease-out 0.3s both;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #ffb6c1;
+            border-radius: 50px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .url-input:focus {
+            border-color: #ff69b4;
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.3);
+            transform: scale(1.02);
+        }
+
+        .url-input::placeholder {
+            color: #ff91c7;
+        }
+
+        .parse-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #ff69b4, #ff1493);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .parse-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 105, 180, 0.4);
+        }
+
+        .parse-btn:active {
+            transform: translateY(0);
+        }
+
+        .parse-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .parse-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .parse-btn:hover::before {
+            left: 100%;
+        }
+
+        /* 广告区域 */
+        .ad-section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(255, 105, 180, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 182, 193, 0.2);
+            text-align: center;
+            animation: slideUp 1s ease-out 0.5s both;
+        }
+
+        .ad-title {
+            font-size: 1.2rem;
+            color: #ff69b4;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .ad-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .ad-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: rgba(255, 182, 193, 0.1);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .ad-item:hover {
+            background: rgba(255, 105, 180, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.3);
+        }
+
+        .ad-icon {
+            font-size: 1.5rem;
+        }
+
+        .ad-text {
+            font-size: 1rem;
+            color: #ff69b4;
+            font-weight: bold;
+        }
+
+        .ad-url {
+            font-size: 0.9rem;
+            color: #666;
+            margin-left: 5px;
+        }
+
+        /* 平台支持 */
+        .platforms {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .platform-item {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .platform-item:hover {
+            transform: translateY(-5px);
+            border-color: #ff69b4;
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.3);
+        }
+
+        .platform-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .platform-name {
+            font-size: 0.9rem;
+            color: #ff69b4;
+            font-weight: bold;
+        }
+
+        /* 结果区域 */
+        .result-section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 25px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(255, 105, 180, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 182, 193, 0.3);
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ffb6c1;
+        }
+
+        .result-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            color: #ff69b4;
+            font-weight: bold;
+        }
+
+        .video-info {
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 182, 193, 0.1);
+            border-radius: 10px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #ff69b4;
+            margin-right: 10px;
+            min-width: 80px;
+        }
+
+        .info-value {
+            color: #666;
+            flex: 1;
+        }
+
+        .download-section {
+            margin-top: 20px;
+        }
+
+        .download-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 182, 193, 0.1);
+            border-radius: 15px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .download-item:hover {
+            border-color: #ff69b4;
+            transform: translateX(5px);
+        }
+
+        .download-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .download-icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+
+        .download-details {
+            flex: 1;
+        }
+
+        .download-type {
+            font-weight: bold;
+            color: #ff69b4;
+            margin-bottom: 5px;
+        }
+
+        .download-size {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .download-btn {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #ff69b4, #ff1493);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #ffb6c1;
+            border-top: 4px solid #ff69b4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #ff69b4;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        /* 错误提示 */
+        .error-message {
+            background: rgba(255, 182, 193, 0.2);
+            border: 2px solid #ff69b4;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            color: #ff1493;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+            
+            .input-section, .result-section, .ad-section {
+                padding: 20px;
+            }
+            
+            .platforms {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            }
+            
+            .ad-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .ad-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 5px;
+            }
+        }
+
+        /* 成功提示动画 */
+        .success-animation {
+            animation: successPulse 0.6s ease-out;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景装饰 -->
+    <div class="bg-decoration">
+        <div class="floating-heart">💕</div>
+        <div class="floating-heart">🌸</div>
+        <div class="floating-heart">✨</div>
+        <div class="floating-heart">💖</div>
+        <div class="floating-heart">🦄</div>
+    </div>
+
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="emoji-title">🎬✨</div>
+            <h1 class="title">短视频解析神器</h1>
+            <p class="subtitle">全平台无水印下载，让美好瞬间永存 💕</p>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="input-section">
+            <div class="input-group">
+                <input type="text" id="urlInput" class="url-input" placeholder="🔗 请粘贴视频链接，支持小红书、抖音、快手等平台...">
+            </div>
+            <button id="parseBtn" class="parse-btn">
+                <span id="btnText">🚀 开始解析</span>
+            </button>
+        </div>
+
+        <!-- 广告区域 -->
+        <div class="ad-section">
+            <div class="ad-title">🌟 推荐服务</div>
+            <div class="ad-content">
+                <a href="https://xunduyun.com/" target="_blank" class="ad-item">
+                    <span class="ad-icon">☁️</span>
+                    <div>
+                        <div class="ad-text">讯度云大宽带独享免备案云服务器</div>
+                        <div class="ad-url">https://xunduyun.com/</div>
+                    </div>
+                </a>
+                <a href="https://qm.qq.com/q/K8N1gNYzSO" target="_blank" class="ad-item">
+                    <span class="ad-icon">💬</span>
+                    <div>
+                        <div class="ad-text">QQ技术交流群</div>
+                        <div class="ad-url">262430517</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- 平台支持 -->
+        <div class="platforms">
+            <div class="platform-item" onclick="fillExample('xiaohongshu')">
+                <span class="platform-icon">📱</span>
+                <div class="platform-name">小红书</div>
+            </div>
+            <div class="platform-item" onclick="fillExample('douyin')">
+                <span class="platform-icon">🎵</span>
+                <div class="platform-name">抖音</div>
+            </div>
+            <div class="platform-item" onclick="fillExample('kuaishou')">
+                <span class="platform-icon">⚡</span>
+                <div class="platform-name">快手</div>
+            </div>
+            <div class="platform-item" onclick="fillExample('pipix')">
+                <span class="platform-icon">🎪</span>
+                <div class="platform-name">皮皮虾</div>
+            </div>
+            <div class="platform-item" onclick="fillExample('zuoyou')">
+                <span class="platform-icon">😄</span>
+                <div class="platform-name">最右</div>
+            </div>
+            <div class="platform-item" onclick="fillExample('weishi')">
+                <span class="platform-icon">📺</span>
+                <div class="platform-name">微视</div>
+            </div>
+            <div class="platform-item" onclick="fillExample('pipigx')">
+                <span class="platform-icon">🎭</span>
+                <div class="platform-name">皮皮搞笑</div>
+            </div>
+        </div>
+
+        <!-- 加载动画 -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">正在解析中，请稍候... ✨</div>
+        </div>
+
+        <!-- 结果区域 -->
+        <div id="resultSection" class="result-section">
+            <div class="result-header">
+                <span class="result-icon">🎉</span>
+                <h2 class="result-title">解析成功！</h2>
+            </div>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://vvv000.top';
+        
+        // 示例链接
+        const examples = {
+            xiaohongshu: 'https://www.xiaohongshu.com/explore/1234567890abcdef',
+            douyin: 'https://v.douyin.com/sHN9tmDFZiI/',
+            kuaishou: 'https://v.kuaishou.com/1234567890',
+            pipix: 'https://h5.pipix.com/item/1234567890',
+            zuoyou: 'https://share.xiaochuankeji.cn/1234567890',
+            weishi: 'https://h5.weishi.qq.com/1234567890',
+            pipigx: 'https://h5.pipigx.com/1234567890'
+        };
+
+        // 填充示例链接
+        function fillExample(platform) {
+            const input = document.getElementById('urlInput');
+            input.value = examples[platform];
+            input.focus();
+            
+            // 添加点击动画
+            event.target.closest('.platform-item').style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                event.target.closest('.platform-item').style.transform = '';
+            }, 150);
+        }
+
+        // 解析视频
+        async function parseVideo() {
+            const urlInput = document.getElementById('urlInput');
+            const parseBtn = document.getElementById('parseBtn');
+            const btnText = document.getElementById('btnText');
+            const loading = document.getElementById('loading');
+            const resultSection = document.getElementById('resultSection');
+            const resultContent = document.getElementById('resultContent');
+
+            const url = urlInput.value.trim();
+            if (!url) {
+                showError('请输入视频链接！');
+                return;
+            }
+
+            // 显示加载状态
+            parseBtn.disabled = true;
+            btnText.textContent = '解析中...';
+            loading.style.display = 'block';
+            resultSection.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE}/jx?id=${encodeURIComponent(url)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResult(data);
+                } else {
+                    showError(data.error || '解析失败，请检查链接是否正确');
+                }
+            } catch (error) {
+                showError('网络错误，请检查接口是否正常运行');
+                console.error('解析错误:', error);
+            } finally {
+                // 恢复按钮状态
+                parseBtn.disabled = false;
+                btnText.textContent = '🚀 开始解析';
+                loading.style.display = 'none';
+            }
+        }
+
+        // 显示解析结果
+        function displayResult(data) {
+            const resultSection = document.getElementById('resultSection');
+            const resultContent = document.getElementById('resultContent');
+
+            let html = `
+                <div class="video-info">
+                    <div class="info-item">
+                        <span class="info-label">📝 标题:</span>
+                        <span class="info-value">${data.title || '暂无标题'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">👤 作者:</span>
+                        <span class="info-value">${data.author.nickname || '未知作者'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">📱 类型:</span>
+                        <span class="info-value">${getMediaTypeText(data.media_type)}</span>
+                    </div>
+                    ${data.cover_url ? `
+                    <div class="info-item">
+                        <span class="info-label">🖼️ 封面:</span>
+                        <div class="info-value">
+                            <img src="${data.cover_url}" style="max-width: 200px; border-radius: 10px; margin-top: 10px;" alt="封面">
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            if (data.items && data.items.length > 0) {
+                html += '<div class="download-section">';
+                data.items.forEach((item, index) => {
+                    const type = item.type || 'video';
+                    const size = item.size ? `(${formatFileSize(item.size)})` : '';
+                    const quality = item.quality || '高清';
+                    
+                    html += `
+                        <div class="download-item">
+                            <div class="download-info">
+                                <span class="download-icon">${type === 'video' ? '🎬' : '🖼️'}</span>
+                                <div class="download-details">
+                                    <div class="download-type">${quality} ${type === 'video' ? '视频' : '图片'}</div>
+                                    <div class="download-size">${size}</div>
+                                </div>
+                            </div>
+                            <button class="download-btn" onclick="downloadFile('${item.url}', '${data.title || 'video'}_${index + 1}')">
+                                💾 下载
+                            </button>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="error-message">暂无可下载的内容</div>';
+            }
+
+            resultContent.innerHTML = html;
+            resultSection.style.display = 'block';
+            resultSection.classList.add('success-animation');
+            
+            // 移除动画类
+            setTimeout(() => {
+                resultSection.classList.remove('success-animation');
+            }, 600);
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const resultSection = document.getElementById('resultSection');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultContent.innerHTML = `<div class="error-message">❌ ${message}</div>`;
+            resultSection.style.display = 'block';
+        }
+
+        // 获取媒体类型文本
+        function getMediaTypeText(type) {
+            const types = {
+                'video': '视频',
+                'image': '图片',
+                'mixed': '混合内容'
+            };
+            return types[type] || '未知';
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (!bytes) return '';
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // 下载文件
+        function downloadFile(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 事件监听
+        document.getElementById('parseBtn').addEventListener('click', parseVideo);
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                parseVideo();
+            }
+        });
+
+        // 页面加载完成后的动画
+        window.addEventListener('load', function() {
+            document.querySelector('.header').style.animation = 'slideDown 1s ease-out';
+            document.querySelector('.input-section').style.animation = 'slideUp 1s ease-out 0.3s both';
+        });
+    </script>
+</body>
+</html>
