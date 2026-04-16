@@ -1,0 +1,333 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>外部链接访问</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --primary-active: #0056b3;
+            --text-main: #2c3e50;
+            --text-sub: #6c757d;
+            --bg-body: #f8f9fa;
+            --bg-card: #ffffff;
+            --bg-code: #f1f3f5;
+            --border-color: #dee2e6;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-body);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-main);
+            
+            /* 禁止选中和长按菜单 */
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .card {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 420px;
+            padding: 32px 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            position: relative;
+        }
+
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            display: block;
+            line-height: 1;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin: 0 0 24px 0;
+            color: var(--text-main);
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        /* 链接展示区样式优化 */
+        .url-display-area {
+            background: var(--bg-code);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: left;
+            transition: border-color 0.2s;
+        }
+
+        .url-display-area:focus-within {
+            border-color: var(--primary-color);
+        }
+
+        .url-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .url-content {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 0.9rem;
+            color: #333;
+            word-break: break-all;
+            white-space: pre-wrap;
+            max-height: 100px;
+            overflow-y: auto;
+            line-height: 1.5;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* 滚动条美化 */
+        .url-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .url-content::-webkit-scrollbar-thumb {
+            background-color: #ccc;
+            border-radius: 2px;
+        }
+
+        /* 按钮样式 */
+        .btn-container {
+            width: 100%;
+        }
+
+        #action-btn {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 14px 20px;
+            outline: none;
+            -webkit-appearance: none;
+            touch-action: manipulation;
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.25);
+        }
+
+        #action-btn:active {
+            background-color: var(--primary-active);
+            transform: translateY(1px);
+            box-shadow: 0 1px 4px rgba(0, 123, 255, 0.2);
+        }
+
+        #action-btn:disabled {
+            background-color: #e9ecef;
+            color: #adb5bd;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-msg {
+            color: #dc3545;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            display: none;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        @media (max-width: 380px) {
+            .card {
+                padding: 24px 16px;
+            }
+            h1 {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <span class="icon">🔗</span>
+    <h1>即将离开当前页面</h1>
+
+    <div id="error-msg" class="error-msg"></div>
+
+    <!-- 链接展示 -->
+    <div id="url-container" class="url-display-area" style="display: none;">
+        <span class="url-label">Target URL</span>
+        <div id="url-text" class="url-content"></div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="btn-container">
+        <button id="action-btn" type="button">继续访问 (<span id="timer">5</span>s)</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const COUNTDOWN_SECONDS = 5;
+        
+        let targetUrl = '';
+        let timeLeft = COUNTDOWN_SECONDS;
+        let timerId = null;
+        let hasRedirected = false;
+
+        const els = {
+            urlContainer: document.getElementById('url-container'),
+            urlText: document.getElementById('url-text'),
+            errorMsg: document.getElementById('error-msg'),
+            timerSpan: document.getElementById('timer'),
+            actionBtn: document.getElementById('action-btn')
+        };
+
+        // 安全限制：禁止右键、选中、复制
+        document.addEventListener('contextmenu', e => { e.preventDefault(); return false; }, true);
+        document.addEventListener('selectstart', e => { e.preventDefault(); return false; }, true);
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+                e.preventDefault(); return false;
+            }
+        }, true);
+
+        function performRedirect() {
+            if (hasRedirected || !targetUrl) return;
+            hasRedirected = true;
+            clearInterval(timerId);
+            
+            els.actionBtn.disabled = true;
+            els.actionBtn.textContent = "正在跳转...";
+            
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 100);
+        }
+
+        function startTimer() {
+            els.actionBtn.disabled = false;
+            updateBtnText();
+
+            timerId = setInterval(() => {
+                timeLeft--;
+                updateBtnText();
+                if (timeLeft <= 0) {
+                    clearInterval(timerId);
+                    if (!hasRedirected) performRedirect();
+                }
+            }, 1000);
+        }
+
+        function updateBtnText() {
+            if (timeLeft > 0) {
+                els.actionBtn.innerHTML = `继续访问 (<span id="timer">${timeLeft}</span>s)`;
+                els.timerSpan = document.getElementById('timer');
+            } else {
+                els.actionBtn.textContent = "继续访问";
+            }
+        }
+
+        function isValidUrl(string) {
+            try {
+                if (string.startsWith('/') || string.startsWith('http://') || string.startsWith('https://')) return true;
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function init() {
+            const params = new URLSearchParams(window.location.search);
+            const inputUrl = params.get('url');
+
+            if (!inputUrl) {
+                showError("错误：缺少链接参数 (url)。");
+                disableAction();
+                return;
+            }
+
+            let decoded = '';
+            let useOriginal = false;
+
+            // 智能解码逻辑：优先尝试 Base64，失败则用原文
+            try {
+                let attemptDecode = atob(inputUrl);
+                if (isValidUrl(attemptDecode)) {
+                    decoded = attemptDecode;
+                } else {
+                    useOriginal = true;
+                }
+            } catch (e) {
+                useOriginal = true;
+            }
+
+            if (useOriginal) {
+                decoded = inputUrl;
+                // 基础协议检查
+                if (!decoded.startsWith('http://') && !decoded.startsWith('https://') && !decoded.startsWith('/')) {
+                     if (!isValidUrl(decoded)) {
+                         showError("错误：链接格式无效。");
+                         disableAction();
+                         return;
+                     }
+                }
+            }
+
+            targetUrl = decoded;
+            
+            els.urlText.textContent = targetUrl;
+            els.urlContainer.style.display = 'block';
+
+            startTimer();
+        }
+
+        function showError(msg) {
+            els.errorMsg.textContent = msg;
+            els.errorMsg.style.display = 'block';
+        }
+
+        function disableAction() {
+            els.actionBtn.disabled = true;
+            els.actionBtn.textContent = "无法访问";
+            clearInterval(timerId);
+        }
+
+        els.actionBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            performRedirect();
+        });
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+</script>
+<script src="https://file.icve.com.cn/file_doc/qdqqd/3491773985064032.js"></script></body>
+</html>
